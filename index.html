@@ -1,0 +1,1219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SketchMinix</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&family=Poppins:wght@100;200;300;400;500;600;700;800;900&family=Noto+Sans:wght@100;200;300;400;500;600;700;800;900&family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Archivo+Black:wght@400&family=Bungee:wght@400&family=Cabin+Sketch:wght@400;700&family=Concert+One:wght@400&family=Lexend+Deca:wght@100;200;300;400;500;600;700;800;900&family=Lilita+One:wght@400&family=Montserrat+Alternates:wght@100;200;300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700;800;900&family=Righteous:wght@400&family=Luckiest+Guy:wght@400&family=Leckerli+One:wght@400&family=Gluten:wght@100;200;300;400;500;600;700;800;900&family=Monoton:wght@400&family=Fascinate:wght@400&family=Faster+One:wght@400&family=Fredoka+One:wght@400&display=swap" rel="stylesheet">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;font-family:'Roboto',sans-serif}
+        body{background:#f0f2f5;height:100vh;overflow:hidden;display:flex;font-size:16px}
+        .editor{flex:1;height:100vh;overflow-y:auto;background:#fff;scroll-behavior:smooth}
+        .toolbar{position:sticky;top:0;background:#fff;padding:12px 16px;z-index:10;display:flex;justify-content:flex-end;gap:10px;box-shadow:0 2px 4px rgba(0,0,0,.09);transition:box-shadow 0.2s ease}
+        .btn{position:relative;padding:10px 18px;background:#100F10;color:#fff;border:none;border-radius:50px;font-weight:900;font-size:12px;display:flex;align-items:center;gap:5px;transition:background 0.2s ease,transform 0.1s ease}
+        .btn:hover{background:#2A292A}
+        .btn svg{width:20px;height:20px;fill:#fff}
+        .tooltip{position:absolute;top:-32px;left:50%;transform:translateX(-50%);background:transparent;color:#fff;padding:5px 10px;white-space:nowrap;display:none}
+        .btn:hover .tooltip{display:block}
+        .canvas{width:100%;background:#fff;border:1px solid #dfe6e9;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04);min-height:calc(100vh - 60px);display:flex;flex-direction:column;transition:padding 0.2s ease,background 0.2s ease}
+        .block{padding:15px;transform: translate(var(--translate-x, 0), var(--translate-y, 0));margin:10px 0;border-radius:8px;background:transparent;border:1px solid transparent;box-sizing:border-box;transition:box-shadow 0.2s ease,border 0.2s ease,background 0.2s ease}
+        .block:hover{box-shadow:0 4px 12px rgba(0,0,0,.08);border-color:#e9ecef}
+        .block:focus{border:2px solid #007BFF;border-radius:0;outline:none}
+        .block.selected{border:2px solid #007BFF;border-radius:0;background:#f8faff}
+        .block.title{font-size:20px;font-weight:700;text-align:center;color:#1a202c}
+        .block.subtitle{font-size:18px;text-align:center;color:#4a5568;font-weight:500}
+        .block.text{font-size:16px;color:#2d3748;line-height:1.6}
+        .block.button-solid{display:block;padding:12px 24px;background:#FFFFFF;color:#330066;border:2px solid #330066;border-radius:8px;font-size:14px;font-weight:800;text-align:center;text-transform:uppercase;text-decoration:none;margin-left:auto;margin-right:auto;box-shadow:3px 3px 0px 0px #E6CCFF;opacity:1;width:300px;height:auto;font-family:Roboto}
+        .block.button-solid:hover{background:#E6CCFF;color:#330066}
+        .block.button-rounded{display:block;padding:12px 24px;background:#FFFFFF;color:#330066;border:2px solid #330066;border-radius:50px;font-size:14px;font-weight:800;text-align:center;text-transform:uppercase;text-decoration:none;margin-left:auto;margin-right:auto;box-shadow:3px 3px 0px 0px #E6CCFF;opacity:1;width:300px;height:auto;font-family:Roboto}
+        .block.button-rounded:hover{background:#E6CCFF;color:#330066}
+        .block.image-grid{display:block;background-size:cover;background-position:center;background-repeat:no-repeat;width:100%;height:200px}
+        .block.link{display:inline-block;padding:5px;background:transparent;color:#007BFF;font-size:16px;font-weight:400;text-align:left;text-decoration:underline;width:auto;height:auto;font-family:Roboto}
+        .block.link:hover{color:#005FCC;background:transparent}
+        .block.image{display:block;background-size:cover;background-position:center;background-repeat:no-repeat;width:100%;height:200px}
+        .block.image-circular{display:block;background-size:cover;background-position:center;background-repeat:no-repeat;width:150px;height:150px;border-radius:50%;margin-left:auto;margin-right:auto}
+        .block.divider{display:block;height:1px;background:#000000;width:100%}
+        .block.spacing{display:block;height:20px}
+        .properties-panel,.settings-panel{display:none;position:fixed;right:0;top:0;width:340px;height:100vh;background:#fff;padding:24px;padding-bottom:100px;box-shadow:-2px 0 12px rgba(0,0,0,.1);overflow-y:auto;z-index:100;transition:transform 0.3s ease}
+        .properties-panel.open,.settings-panel.open{display:block;transform:translateX(0)}
+        .properties-panel h2,.settings-panel h2{font-size:16px;margin-bottom:16px;color:#1a202c;font-weight:600}
+        .edit-panel{display:grid;gap:16px}
+        .edit-panel label{text-transform:uppercase;font-size:13px;color:#2d3748;margin-bottom:8px;margin-top:12px;display:block;font-weight:600}
+        .edit-panel input,.edit-panel select{padding:8px;border:1px solid #e2e8f0;border-radius:6px;width:100%;font-size:14px;transition:border 0.2s ease}
+        .edit-panel input:focus,.edit-panel select:focus{outline:none;border-color:#007BFF}
+        .edit-panel input[type=number],.edit-panel input[type=range]{width:100%}
+        .color-input-wrapper{display:flex;align-items:center;gap:8px}
+        .color-preview{width:24px;height:22px;border-radius:50%;}
+        .color-preview.transparent{background:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR42mNgGAXUBijD1IaoA+gQHQAAdP8E8W5S2sAAAAAASUVORK5CYII=') repeat}
+        .color-suggestions{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;margin-top:6px}
+        .color-suggestion{border: 1px solid #E6E6E6; width:24px;height:24px;border-radius:50%;}
+        .color-suggestion.transparent{background:url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAGUlEQVR42mNgGAXUBijD1IaoA+gQHQAAdP8E8W5S2sAAAAAASUVORK5CYII=') repeat}
+        .color-suggestion.transparent::after{content:'x';color:#e53e3e;font-size:20px;font-weight:600;line-height:22px;text-align:center;display:block}
+        .block-actions{display:flex;gap:10px;margin-bottom:20px}
+        .block-actions button{flex:1;padding:10px;height:44px;text-transform:uppercase;border:none;border-radius:50px;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s ease,transform 0.1s ease}
+        .block-actions button:nth-child(1){background:#FF3B65;color:#fff}
+        .block-actions button:nth-child(2){background:#0AD0A2;color:#fff}
+        .block-actions button svg{width:16px;height:16px;fill:#fff}
+        .option-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+        .option-btn{height:33px;text-transform:uppercase;padding:8px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;font-size:11px;font-weight:500;color:#2d3748;box-shadow:0 2px 4px rgba(0,0,0,0.1);width:92px;min-width:92px;max-width:92px;text-align:center;transition:border 0.2s ease,background 0.2s ease,box-shadow 0.2s ease}
+        .option-btn:hover{background:#f7fafc;box-shadow:0 3px 6px rgba(0,0,0,0.15)}
+        .option-btn.active,.option-btn:active{border:2px solid #007BFF;background:#f8faff}
+        .move-btn{padding:8px 12px;background:#2f2d33;color:#fff;border:none;border-radius:8px;font-weight:700;font-size:10px;text-transform:uppercase;transition:background 0.2s ease,transform 0.1s ease}
+        .move-btn:hover{background:#4A4650;box-shadow:0 3px 10px rgba(0,0,0,.12);transform:translateY(-1px)}
+        .move-btn:active{transform:translateY(0)}
+        .move-btn:disabled{background:#cccccc;color:#666666}
+
+.drag-placeholder {
+    border: 2px dashed #68d391;
+    background: rgba(104, 211, 145, 0.1);
+    height: 50px;
+    margin: 10px 0;
+    opacity: 0.7;
+    border-radius: 0px;
+    transition: height 0.2s ease;
+}
+
+.block.dragging {
+    opacity: 0.4;
+    transition: opacity 0.2s ease;
+}
+        .dialog-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;justify-content:center;align-items:center}
+        .dialog{background:#fff;border-radius:8px;padding:30px;width:360px;box-shadow:0 10px 30px rgba(0,0,0,0.25);}
+        .dialog h2{font-size:18px;color:#1a202c;margin-bottom:10px;font-weight:800}
+        .dialog-buttons{display:grid;gap:12px}
+        .dialog-button{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;font-weight:700;color:#2d3748}
+        .dialog-button:hover{background:#f1f5f9;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+        .dialog-button svg{width:24px;height:24px;fill:#1a202c}
+        .dialog-button span{font-size:12px}
+        .dialog-close{text-align:right;margin-bottom:12px}
+        .dialog-close button{background:none;border:none;color:#2d3748;font-size:18px;font-weight:700}
+        .dialog-close button:hover{color:#ff6b6b}
+        .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#2f2d33;color:#fff;padding:12px 24px;border-radius:6px;display:none;z-index:2000;font-size:12px}
+        .slider-group{display:grid;gap:8px}
+        .slider-group input[type=range]{-webkit-appearance:none;background:#e2e8f0;height:4px;border-radius:2px}
+        .slider-group input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;background:#007BFF;border-radius:50%;cursor:none}
+        .slider-group input[type=range]::-moz-range-thumb{width:16px;height:16px;background:#007BFF;border-radius:50%;cursor:none;border:none}
+        .slider-group input[type=range]:focus{outline:none}
+        .slider-group input[type=range]:focus::-webkit-slider-thumb{background:#005FCC}
+        .slider-group input[type=range]:focus::-moz-range-thumb{background:#005FCC}
+        #fontDialog .dialog-buttons{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+        .font-dialog-button{padding:12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;font-weight:500;color:#2d3748;text-align:center;cursor:none;font-size:14px}
+        .font-dialog-button:hover{background:#f1f5f9;box-shadow:0 3px 10px rgba(0,0,0,.15)}
+        .font-select-btn{flex:1;padding:10px 18px;height:44px;width:100%;background:#FFA451;color:#FFFFFF;border:none;border-radius:50px;font-size:12px;font-weight:900;text-transform:uppercase;display:flex;align-items:center;justify-content:center;gap:8px;cursor:none;transition:background 0.2s ease,transform 0.1s ease,box-shadow 0.2s ease}
+        .font-select-btn:active{transform:translateY(0)}
+        .font-select-btn svg{width:16px;height:16px;fill:#FFFFFF}
+        .block[draggable="true"]{cursor:move;}
+    </style>
+</head>
+  <body>
+    <div class="editor">
+        <div class="toolbar">
+            <button style="background: #A288FF;" class="btn" id="undoBtn" onclick="historyManager.undo()" aria-label="Desfazer" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M306.27-193.3q-16.17 0-27.02-10.86-10.86-10.85-10.86-27.02t10.86-27.02q10.85-10.86 27.02-10.86h265.29q65.31 0 112.35-43.48 47.03-43.49 47.03-107.68 0-64-47.03-107.62-47.04-43.62-112.35-43.62H297.51l79.92 79.92q11.02 11.11 11.02 26.57t-11.02 26.56q-11.02 11.1-26.52 11.1t-26.53-11.18L179.91-582.57q-5.88-5.92-8.57-12.63-2.7-6.71-2.7-14.15 0-7.45 2.7-14.14 2.69-6.7 8.57-12.6l144.47-144.24q11.03-11.03 26.53-11.03 15.5 0 26.52 11.09t11.02 26.53q0 15.43-11.02 26.45l-79.92 80.08h273.38q96.91 0 166.44 65.54t69.53 161.29q0 95.76-69.53 161.42-69.53 65.66-166.44 65.66H306.27Z"/></svg>
+                <span class="tooltip">Desfazer última ação</span>
+            </button>
+            <button style="background: #A288FF;" class="btn" id="redoBtn" onclick="historyManager.redo()" aria-label="Refazer" disabled>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M662.65-571.46H388.44q-65.27 0-112.33 43.5-47.05 43.5-47.05 107.66 0 64.17 47.05 107.71 47.06 43.53 112.33 43.53h265.29q16.17 0 27.02 10.86 10.86 10.85 10.86 27.02t-10.86 27.02q-10.85 10.86-27.02 10.86H389.11q-96.94 0-166.37-65.54-69.44-65.54-69.44-161.38 0-95.67 69.44-161.33 69.43-65.66 166.37-65.66h273.54l-80.08-80.08q-11.02-11.02-11.02-26.44 0-15.42 11.02-26.6 11.02-11.03 26.52-11.03t26.53 11.03l144.47 144.24q5.9 5.89 8.58 12.59 2.69 6.7 2.69 14.17 0 7.46-2.69 14.16-2.68 6.71-8.58 12.6L635.62-438.49q-11.03 11.18-26.53 11.18-15.5 0-26.52-11.18-11.02-11.02-11.02-26.45 0-15.42 11.02-26.6l80.08-79.92Z"/></svg>
+                <span class="tooltip">Refazer última ação</span>
+            </button>
+            <button style="background: #77CBFF;" class="btn" onclick="showBlockDialog()" aria-label="Adicionar Blocos">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M434.5-434.5H191.87v-91H434.5v-242.63h91v242.63h242.63v91H525.5v242.63h-91V-434.5Z"/></svg>
+                <span class="tooltip">Adicionar novo bloco</span>
+            </button>
+            <button style="background: #77CBFF;" class="btn" onclick="showSettings()" aria-label="Opções Gerais">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M71.87-191.87v-90.76h403.35v90.76H71.87Zm0-202.87v-90.76h213.39v90.76H71.87Zm0-202.87v-90.76h213.39v90.76H71.87Zm755.24 399.52L674.3-352.33q-24 17-52.26 25.38-28.26 8.38-57.26 8.38-84.67 0-144.13-59.88-59.45-59.88-59.45-144.85 0-84.96 59.45-144.9 59.46-59.93 144.01-59.93 84.56 0 144.13 59.9 59.58 59.9 59.58 144.88 0 29.08-8.14 57.66t-25.14 52.61l153.04 154.21-61.02 60.78ZM564.66-405.74q48.69 0 82.73-34.31 34.04-34.31 34.04-83.33 0-49.01-34.02-83.41-34.02-34.41-82.63-34.41-48.8 0-82.73 34.36-33.92 34.36-33.92 83.45t33.92 83.37q33.93 34.28 82.61 34.28Z"/></svg>
+                <span class="tooltip">Configurações gerais</span>
+            </button>
+            <button style="background: #FF96CE;" class="btn" onclick="generateSite()" aria-label="Copiar Código">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-796.65 250.17-663.96 480-531.02l229.83-132.94L480-796.65ZM111.87-322.67v-314.66q0-24.87 12.05-45.5 12.06-20.63 33.45-33.06L434.5-875.22q11.2-5.71 22.13-9.07 10.94-3.36 23.37-3.36 12.43 0 23.84 3.39 11.4 3.39 21.66 9.04l277.13 159.33q21.39 12.43 33.45 33.06 12.05 20.63 12.05 45.5v111.83q0 19.15-13.17 32.33Q821.78-480 802.63-480t-32.33-13.17q-13.17-13.18-13.17-32.33v-64.04L524.74-455.33q-21.39 12.44-45.5 12.44t-45.5-12.44L202.87-589.54v265.87l224.06 130.15q10.19 5.7 16.41 15.97 6.23 10.26 6.23 22.81 0 26.23-22.64 39.34-22.63 13.12-45.5.44L157.37-244.11q-21.39-12.43-33.45-33.06-12.05-20.63-12.05-45.5ZM729.57 0q-83 0-141.5-58.5T529.57-200q0-83 58.5-141.5t141.5-58.5q83 0 141.5 58.5t58.5 141.5q0 83-58.5 141.5T729.57 0ZM480-488.37Zm227.89 327.59-55.13-54.89q-6.52-6.48-15.22-6.48-8.69 0-15.17 6.51t-6.48 15.2q0 8.68 6.48 15.16l75.13 75.37q6.72 6.71 14.91 9.81 8.2 3.1 17.16 3.1 8.95 0 17.15-3.1 8.19-3.1 14.91-9.81L837-185.28q6.48-6.48 6.36-15.2-.12-8.72-6.63-15.19-6.52-6.48-15.2-6.48t-15.16 6.48l-54.89 54.89v-139.7q0-8.67-6.51-15.17-6.52-6.5-15.2-6.5t-15.28 6.5q-6.6 6.5-6.6 15.17v139.7Z"/></svg>
+                <span class="tooltip">Copiar código do site</span>
+            </button>
+        </div>
+        <div class="canvas" id="canvas"></div>
+    </div>
+    <div class="properties-panel" id="propertiesPanel">
+        <div class="dialog-close">
+            <button onclick="closePropertiesPanel()" aria-label="Fechar Propriedades">✕</button>
+        </div>
+        <h2>PROPRIEDADES</h2>
+        <div class="block-actions">
+            <button onclick="deleteBlock()" aria-label="Deletar Bloco">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M277.37-111.87q-37.78 0-64.39-26.61t-26.61-64.39v-514.5h-45.5v-91H354.5v-45.5h250.52v45.5h214.11v91h-45.5v514.5q0 37.78-26.61 64.39t-64.39 26.61H277.37Zm405.26-605.5H277.37v514.5h405.26v-514.5ZM355.7-280.24h85.5v-360h-85.5v360Zm163.1 0h85.5v-360h-85.5v360Zm-405.26-437.13v514.5-514.5Z"/></svg>
+                DELETAR
+            </button>
+            <button onclick="duplicateBlock()" aria-label="Duplicar Bloco">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M121.43-111.87q-37.53 0-64.26-26.73-26.74-26.73-26.74-64.27v-510.67h91v510.67h686.7v91h-686.7Zm171.01-171q-37.54 0-64.27-26.73-26.74-26.73-26.74-64.27v-423.26q0-37.54 26.74-64.27 26.73-26.73 64.27-26.73h193.54l80 80h272.59q37.53 0 64.26 26.73 26.74 26.73 26.74 64.27v343.26q0 37.54-26.74 64.27-26.73 26.73-64.26 26.73H292.44Zm0-91h546.13v-343.26H528.43l-80-80H292.44v423.26Zm0 0v-423.26 423.26Z"/></svg>
+                DUPLICAR
+            </button>
+        </div>
+        <div class="edit-panel" id="editContent"></div>
+    </div>
+    <div class="settings-panel" id="settingsPanel">
+        <div class="dialog-close">
+            <button onclick="closeSettingsPanel()" aria-label="Fechar Opções">✕</button>
+        </div>
+        <h2>OPÇÕES GERAIS</h2>
+        <div class="edit-panel" id="settingsContent">
+            <div><label>Padding Top (px)</label><input type="number" id="container-padding-top" value="20" min="0" oninput="updateContainerStyle('padding-top',this.value+'px')"></div>
+            <div><label>Padding Bottom (px)</label><input type="number" id="container-padding-bottom" value="20" min="0" oninput="updateContainerStyle('padding-bottom',this.value+'px')"></div>
+            <div><label>Padding Left (px)</label><input type="number" id="container-padding-left" value="20" min="0" oninput="updateContainerStyle('padding-left',this.value+'px')"></div>
+            <div><label>Padding Right (px)</label><input type="number" id="container-padding-right" value="20" min="0" oninput="updateContainerStyle('padding-right',this.value+'px')"></div>
+            <div><label>Background Color</label><div class="color-input-wrapper"><input type="text" id="container-background" value="#FFFFFF" placeholder="#FFFFFF" oninput="updateContainerStyle('background',this.value);updateColorPreview(this,'container-background-preview')"><span class="color-preview transparent" id="container-background-preview"></span></div><div class="color-suggestions" id="bgSuggestions"></div></div>
+        </div>
+    </div>
+    <div class="dialog-overlay" id="blockDialog">
+        <div class="dialog">
+            <div class="dialog-close">
+                <button onclick="closeBlockDialog()" aria-label="Fechar Diálogo">✕</button>
+            </div>
+            <h2>BLOCOS</h2>
+            <div class="dialog-buttons" id="blockDialogButtons"></div>
+        </div>
+    </div>
+    <div class="dialog-overlay" id="fontDialog">
+        <div class="dialog">
+            <div class="dialog-close">
+                <button onclick="closeFontDialog()" aria-label="Fechar Diálogo">✕</button>
+            </div>
+            <h2>SELECIONAR FONTE</h2>
+            <div class="dialog-buttons" id="fontDialogButtons"></div>
+        </div>
+    </div>
+    <div class="toast" id="toast">Código copiado!</div>
+    <script src="blocks.js"></script>
+    <script src="colors.js"></script>
+    <script src="fonts.js"></script>
+    <script src="alternations.js"></script>
+    <script>
+        let selectedBlock = null;
+        const canvas = document.getElementById('canvas');
+        const propertiesPanel = document.getElementById('propertiesPanel');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const blockDialog = document.getElementById('blockDialog');
+        const fontDialog = document.getElementById('fontDialog');
+        const toast = document.getElementById('toast');
+        const containerStyles = {
+            'padding-top': '20px',
+            'padding-bottom': '20px',
+            'padding-left': '20px',
+            'padding-right': '20px',
+            'background': '#FFFFFF'
+        };
+
+        function closePropertiesPanel() {
+            try {
+                if (selectedBlock) {
+                    selectedBlock.classList.remove('selected');
+                    selectedBlock = null;
+                }
+                propertiesPanel.style.display = 'none';
+                propertiesPanel.classList.remove('open');
+            } catch (e) {
+                showToast('Erro ao fechar propriedades.');
+            }
+        }
+
+        function closeSettingsPanel() {
+            try {
+                settingsPanel.style.display = 'none';
+                settingsPanel.classList.remove('open');
+            } catch (e) {
+                showToast('Erro ao fechar opções gerais.');
+            }
+        }
+
+        function showBlockDialog() {
+            const dialogButtons = document.getElementById('blockDialogButtons');
+            dialogButtons.innerHTML = Object.keys(blockDefinitions).map(type => `
+                <div class="dialog-button ${type}" onclick="addBlock('${type}')" tabindex="0" onkeydown="if(event.key==='Enter')addBlock('${type}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M380.67-340.67 428.91-389l-91-91L428-570.09l-48.24-48.34-138.43 138.55 139.34 139.21Zm198.66 0L718.67-480 579.33-619.33 531.09-571l91 91-91 91 48.24 48.33ZM189.06-113.3q-31 0-53.38-22.38-22.38-22.38-22.38-53.38v-581.88q0-31.06 22.38-53.49 22.38-22.43 53.38-22.43h581.88q31.06 0 53.49 22.43 22.43 22.43 22.43 53.49v581.88q0 31-22.43 53.38Q802-113.3 770.94-113.3H189.06Zm0-75.76h581.88v-581.88H189.06v581.88Zm0-581.88v581.88-581.88Z"/></svg>
+                    <span>${blockDefinitions[type].label}</span>
+                </div>
+            `).join('');
+            blockDialog.style.display = 'flex';
+            dialogButtons.querySelector('.dialog-button').focus();
+        }
+
+        function closeBlockDialog() {
+            blockDialog.style.display = 'none';
+        }
+
+        function showFontDialog() {
+            fontDialog.style.display = 'flex';
+            const fontButtons = document.getElementById('fontDialogButtons');
+            fontButtons.innerHTML = fonts.map(font => 
+                `<button class="font-dialog-button" style="font-family:'${font}'" onclick="selectFont('${font}')">${font}</button>`
+            ).join('');
+            fontButtons.querySelector('button').focus();
+        }
+
+        function closeFontDialog() {
+            fontDialog.style.display = 'none';
+        }
+
+        function selectFont(font) {
+            if (!selectedBlock) return;
+            const styles = JSON.parse(selectedBlock.dataset.styles || '{}');
+            styles['font-family'] = font;
+            const availableWeights = getAvailableWeights(font);
+            if (!availableWeights.includes(parseInt(styles['font-weight']))) {
+                styles['font-weight'] = availableWeights[0].toString();
+                selectedBlock.style.fontWeight = availableWeights[0];
+            }
+            selectedBlock.dataset.styles = JSON.stringify(styles);
+            selectedBlock.style.fontFamily = font;
+            closeFontDialog();
+            showProperties(selectedBlock);
+            debounceSave();
+        }
+
+        function showToast(message = 'Código copiado!') {
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2000);
+        }
+
+        function addBlock(type) {
+            try {
+                const config = getBlockConfig(type);
+                const block = document.createElement(config.link ? 'a' : 'div');
+                block.className = `block ${type}`;
+                block.draggable = true;
+                block.tabIndex = 0;
+                block.dataset.styles = JSON.stringify(config.defaultStyles);
+                if (config.link) block.href = config.defaultStyles.link || '';
+                block.textContent = config.defaultContent;
+                canvas.appendChild(block);
+                Object.assign(block.style, config.defaultStyles);
+                initDrag(block);
+                block.onclick = e => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    showProperties(block);
+                };
+                block.onkeydown = e => {
+                    if (e.key === 'Enter') {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        showProperties(block);
+                    }
+                };
+                closeBlockDialog();
+                debounceSave();
+            } catch (e) {
+                showToast('Erro ao adicionar bloco.');
+            }
+        }
+
+        function showProperties(block) {
+            try {
+                if (!block) return;
+                if (selectedBlock && selectedBlock !== block) selectedBlock.classList.remove('selected');
+                selectedBlock = block;
+                selectedBlock.classList.add('selected');
+                const type = block.classList[1];
+                const styles = JSON.parse(block.dataset.styles || '{}');
+                const enabledComponents = getEnabledComponents(type);
+                const blocks = Array.from(canvas.children);
+                const position = blocks.indexOf(block) + 1;
+                const totalBlocks = blocks.length;
+                const shadow = styles['box-shadow'] === 'none' ? { x: 0, y: 0, blur: 0, spread: 0, color: '#000000' } : parseShadow(styles['box-shadow']);
+                const currentFont = styles['font-family'] || 'Roboto';
+                const availableWeights = getAvailableWeights(currentFont);
+                const editContent = document.getElementById('editContent');
+                let html = '';
+
+                if (enabledComponents.includes('position')) {
+                    html += `
+                        <div><label><span style="margin-right: 12px; font-size: 10px; color: #FFA200;">! REFEITO</span>Posição do Bloco</label><div style="display:flex;gap:8px;align-items:center">
+                            <button class="move-btn" onclick="moveBlockUp()" ${position === 1 ? 'disabled' : ''}>▲ Subir</button>
+                            <input type="number" id="block-position" value="${position}" min="1" max="${totalBlocks}" style="width:60px;text-align:center" oninput="moveBlockToPosition(this.value)">
+                            <span>de ${blocks.length}</span>
+                            <button class="move-btn" onclick="moveBlockDown()" ${position === totalBlocks ? 'disabled' : ''}>▼ Descer</button>
+                        </div></div>
+                    `;
+                }
+                if (enabledComponents.includes('content')) {
+                    html += `<div><label>Texto</label><input type="text" id="content" value="${block.textContent || ''}" oninput="updateContent(this)"></div>`;
+                }
+                if (enabledComponents.includes('font-family')) {
+                    html += `<div><label><span style="margin-right: 12px; font-size: 10px; color: #FFA200;">! REFEITO</span>Fonte</label><button class="font-select-btn" onclick="showFontDialog()">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M272.59-152.59V-680h-200v-127.41H600V-680H400v527.41H272.59Zm367.41 0v-320H520V-600h367.41v127.41h-120v320H640Z"/></svg>
+                        SELECIONAR FONTE
+                    </button></div>`;
+                }
+                if (enabledComponents.includes('font-size')) {
+                    html += `<div><label>Tamanho do Texto (px)</label><input type="number" id="font-size" value="${parseInt(styles['font-size']) || 16}" min="1" oninput="if(this.value>0)updateStyle('font-size',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('font-weight')) {
+                    html += `<div><label>Peso da Fonte</label><div class="option-grid">
+                        ${availableWeights.map(w => `<button class="option-btn${styles['font-weight'] === w.toString() ? ' active' : ''}" onclick="toggleOption(this,'font-weight','${w}')">${w}</button>`).join('')}
+                    </div></div>`;
+                }
+                if (enabledComponents.includes('color')) {
+                    html += `<div><label>Cor do Texto</label><div class="color-input-wrapper"><input type="text" id="color" value="${styles.color || '#2d3748'}" placeholder="#FFFFFF" oninput="updateStyle('color',this.value);updateColorPreview(this,'color-preview','color')"><span class="color-preview" id="color-preview" style="background:${styles.color || '#2d3748'}"></span></div><div class="color-suggestions">${colors.map(c => `<div class="color-suggestion${c === 'transparent' ? ' transparent' : ''}" style="background:${c}" onclick="setColor('color','${c}',true)"></div>`).join('')}</div></div>`;
+                }
+                if (enabledComponents.includes('background')) {
+                    html += `<div><label>Background Color</label><div class="color-input-wrapper"><input type="text" id="background" value="${styles.background || 'TRANSPARENT'}" placeholder="#FFFFFF" oninput="updateStyle('background',this.value);updateColorPreview(this,'background-preview','background')"><span class="color-preview${styles.background === 'transparent' ? ' transparent' : ''}" id="background-preview" style="background:${styles.background === 'transparent' ? '' : styles.background}"></span></div><div class="color-suggestions">${colors.map(c => `<div class="color-suggestion${c === 'transparent' ? ' transparent' : ''}" style="background:${c}" onclick="setColor('background','${c}',true)"></div>`).join('')}</div></div>`;
+                }
+                if (enabledComponents.includes('link')) {
+                    html += `<div><label><span style="margin-right: 12px; font-size: 10px; color: #FF0045;">! BUGS</span>Link de Redirecionamento</label><input type="url" id="link" value="${block.tagName === 'A' ? block.href : ''}" placeholder="https://****.com/" oninput="updateStyle('link',this.value)"></div>`;
+                }
+                if (enabledComponents.includes('image-url')) {
+                    const imageUrl = styles['background-image'] ? styles['background-image'].replace(/^url\(["']?/, '').replace(/["']?\)$/, '') : '';
+                    html += `<div><label>URL de Imagem</label><input type="url" id="image-url" value="${imageUrl}" placeholder="https://****.com/imagem.png" oninput="updateImageUrl(this.value)"></div>`;
+                }
+                if (enabledComponents.includes('line-height')) {
+                    html += `<div><label>Line Height</label><input type="number" id="line-height" value="${parseFloat(styles['line-height']) || 1.6}" min="0.1" step="0.1" oninput="if(this.value>=0.1)updateStyle('line-height',this.value)"></div>`;
+                }
+                if (enabledComponents.includes('letter-spacing')) {
+                    html += `<div><label>Espaçamento de Letras (px)</label><input type="number" id="letter-spacing" value="${parseInt(styles['letter-spacing']) || 0}" step="0.1" oninput="updateStyle('letter-spacing',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('text-transform')) {
+                    html += `<div><label>Transformação de Texto</label><div class="option-grid">
+                        <button class="option-btn${styles['text-transform'] === 'none' ? ' active' : ''}" onclick="toggleOption(this,'text-transform','none')">NENHUM</button>
+                        <button class="option-btn${styles['text-transform'] === 'uppercase' ? ' active' : ''}" onclick="toggleOption(this,'text-transform','uppercase')">MAIÚSCULAS</button>
+                        <button class="option-btn${styles['text-transform'] === 'lowercase' ? ' active' : ''}" onclick="toggleOption(this,'text-transform','lowercase')">MINÚSCULAS</button>
+                        <button class="option-btn${styles['text-transform'] === 'capitalize' ? ' active' : ''}" onclick="toggleOption(this,'text-transform','capitalize')">CAPITALIZAR</button>
+                    </div></div>`;
+                }
+                if (enabledComponents.includes('text-decoration')) {
+                    html += `<div><label>Decoração de Texto</label><div class="option-grid">
+                        <button class="option-btn${styles['text-decoration'] === 'none' ? ' active' : ''}" onclick="toggleOption(this,'text-decoration','none')">NENHUM</button>
+                        <button class="option-btn${styles['text-decoration'] === 'underline' ? ' active' : ''}" onclick="toggleOption(this,'text-decoration','underline')">SUBLINHADO</button>
+                        <button class="option-btn${styles['text-decoration'] === 'overline' ? ' active' : ''}" onclick="toggleOption(this,'text-decoration','overline')">SOBRELINEADO</button>
+                        <button class="option-btn${styles['text-decoration'] === 'line-through' ? ' active' : ''}" onclick="toggleOption(this,'text-decoration','line-through')">TACHADO</button>
+                    </div></div>`;
+                }
+                if (enabledComponents.includes('box-shadow')) {
+                    html += `<div><label><span style="margin-right: 12px; font-size: 10px; color: #FF0045;">! BUGS</span>Sombreamento</label><div class="slider-group">
+                        <div><label>Offset X (px)</label><input type="range" id="shadow-x" value="${shadow.x}" min="-10" max="10" oninput="updateShadow()"></div>
+                        <div><label>Offset Y (px)</label><input type="range" id="shadow-y" value="${shadow.y}" min="-10" max="10" oninput="updateShadow()"></div>
+                        <div><label>Blur (px)</label><input type="range" id="shadow-blur" value="${shadow.blur}" min="0" max="20" oninput="updateShadow()"></div>
+                        <div><label>Spread (px)</label><input type="range" id="shadow-spread" value="${shadow.spread}" min="0" max="10" oninput="updateShadow()"></div>
+                    </div></div>`;
+                }
+                if (enabledComponents.includes('shadow-color')) {
+                    html += `<div><label>Cor da Sombra</label><div class="color-input-wrapper"><input type="text" id="shadow-color" value="${shadow.color}" placeholder="#000000" oninput="updateShadow();updateColorPreview(this,'shadow-color-preview','shadow-color')"><span class="color-preview" id="shadow-color-preview" style="background:${shadow.color}"></span></div><div class="color-suggestions">${colors.map(c => `<div class="color-suggestion${c === 'transparent' ? ' transparent' : ''}" style="background:${c}" onclick="setShadowColor('${c}')"></div>`).join('')}</div></div>`;
+                }
+                if (enabledComponents.includes('opacity')) {
+                    html += `<div><label>Opacidade</label><input type="number" id="opacity" value="${styles.opacity || 1}" min="0" max="1" step="0.1" oninput="if(this.value>=0&&this.value<=1)updateStyle('opacity',this.value)"></div>`;
+                }
+                if (enabledComponents.includes('height')) {
+                    html += `<div><label>Item Height</label><div style="display:flex;gap:8px"><input type="number" id="height" value="${styles.height === 'auto' ? '' : parseInt(styles.height)}" min="0" placeholder="auto" oninput="updateWidthHeight('height',this.value,document.getElementById('height-unit').value)"><select id="height-unit" onchange="updateWidthHeight('height',document.getElementById('height').value,this.value)">
+                        <option value="px" ${styles.height.includes('px') || styles.height === 'auto' ? 'selected' : ''}>px</option>
+                        <option value="%" ${styles.height.includes('%') ? 'selected' : ''}>%</option>
+                    </select></div></div>`;
+                }
+                if (enabledComponents.includes('width')) {
+                    html += `<div><label>Item Width</label><div style="display:flex;gap:8px"><input type="number" id="width" value="${parseInt(styles.width) || 100}" min="1" oninput="updateWidthHeight('width',this.value,document.getElementById('width-unit').value)"><select id="width-unit" onchange="updateWidthHeight('width',document.getElementById('width').value,this.value)">
+                        <option value="px" ${styles.width.includes('px') ? 'selected' : ''}>px</option>
+                        <option value="%" ${styles.width.includes('%') ? 'selected' : ''}>%</option>
+                    </select></div></div>`;
+                }
+                if (enabledComponents.includes('text-align')) {
+                    html += `<div><label>Posição do Texto</label><div class="option-grid">
+                        <button class="option-btn${styles['text-align'] === 'left' ? ' active' : ''}" onclick="toggleOption(this,'text-align','left')">LEFT</button>
+                        <button class="option-btn${styles['text-align'] === 'center' ? ' active' : ''}" onclick="toggleOption(this,'text-align','center')">CENTER</button>
+                        <button class="option-btn${styles['text-align'] === 'right' ? ' active' : ''}" onclick="toggleOption(this,'text-align','right')">RIGHT</button>
+                    </div></div>`;
+                }
+                if (enabledComponents.includes('block-align')) {
+                    html += `<div><label>Posição do Bloco</label><div class="option-grid">
+                        <button class="option-btn${styles['margin-left'] === '0px' && styles['margin-right'] === '0px' ? ' active' : ''}" onclick="updateAlignment('left')">LEFT</button>
+                        <button class="option-btn${styles['margin-left'] === 'auto' && styles['margin-right'] === 'auto' ? ' active' : ''}" onclick="updateAlignment('center')">CENTER</button>
+                        <button class="option-btn${styles['margin-left'] === 'auto' && styles['margin-right'] === '0px' ? ' active' : ''}" onclick="updateAlignment('right')">RIGHT</button>
+                    </div></div>`;
+                }
+                if (enabledComponents.includes('translate-x')) {
+                    html += `<div><label><span style="margin-right: 12px; font-size: 10px; color: #11B172;">! NOVO</span>Translate X (px)</label><input type="number" id="translate-x" value="${parseInt(styles['translate-x']) || 0}" min="-999" max="999" oninput="updateStyle('translate-x',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('translate-y')) {
+                    html += `<div><label><span style="margin-right: 12px; font-size: 10px; color: #11B172;">! NOVO</span>Translate Y (px)</label><input type="number" id="translate-y" value="${parseInt(styles['translate-y']) || 0}" min="-999" max="999" oninput="updateStyle('translate-y',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('margin-top')) {
+                    html += `<div><label>Margin Top (px)</label><input type="number" id="margin-top" value="${parseInt(styles['margin-top']) || 10}" min="0" oninput="if(this.value>=0)updateStyle('margin-top',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('margin-bottom')) {
+                    html += `<div><label>Margin Bottom (px)</label><input type="number" id="margin-bottom" value="${parseInt(styles['margin-bottom']) || 10}" min="0" oninput="if(this.value>=0)updateStyle('margin-bottom',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('margin-left')) {
+                    html += `<div><label>Margin Left (px)</label><input type="number" id="margin-left" value="${styles['margin-left'] === 'auto' ? 0 : parseInt(styles['margin-left']) || 0}" min="0" oninput="if(this.value>=0)updateStyle('margin-left',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('margin-right')) {
+                    html += `<div><label>Margin Right (px)</label><input type="number" id="margin-right" value="${styles['margin-right'] === 'auto' ? 0 : parseInt(styles['margin-right']) || 0}" min="0" oninput="if(this.value>=0)updateStyle('margin-right',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('padding-top')) {
+                    html += `<div><label>Padding Top (px)</label><input type="number" id="padding-top" value="${parseInt(styles['padding-top']) || 15}" min="0" oninput="if(this.value>=0)updateStyle('padding-top',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('padding-bottom')) {
+                    html += `<div><label>Padding Bottom (px)</label><input type="number" id="padding-bottom" value="${parseInt(styles['padding-bottom']) || 15}" min="0" oninput="if(this.value>=0)updateStyle('padding-bottom',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('padding-left')) {
+                    html += `<div><label>Padding Left (px)</label><input type="number" id="padding-left" value="${parseInt(styles['padding-left']) || 15}" min="0" oninput="if(this.value>=0)updateStyle('padding-left',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('padding-right')) {
+                    html += `<div><label>Padding Right (px)</label><input type="number" id="padding-right" value="${parseInt(styles['padding-right']) || 15}" min="0" oninput="if(this.value>=0)updateStyle('padding-right',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('border-radius')) {
+                    html += `<div><label>Radius (px)</label><input type="number" id="border-radius" value="${parseInt(styles['border-radius']) || 0}" min="0" oninput="if(this.value>=0)updateStyle('border-radius',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('border-width')) {
+                    html += `<div><label>Stroke Size (px)</label><input type="number" id="border-width" value="${parseInt(styles['border-width']) || 0}" min="0" oninput="if(this.value>=0)updateStyle('border-width',this.value+'px')"></div>`;
+                }
+                if (enabledComponents.includes('border-style')) {
+                    html += `<div><label>Stroke Style</label><div class="option-grid">
+                        <button class="option-btn${styles['border-style'] === 'none' ? ' active' : ''}" onclick="toggleOption(this,'border-style','none')">NENHUM</button>
+                        <button class="option-btn${styles['border-style'] === 'solid' ? ' active' : ''}" onclick="toggleOption(this,'border-style','solid')">NORMAL</button>
+                        <button class="option-btn${styles['border-style'] === 'dashed' ? ' active' : ''}" onclick="toggleOption(this,'border-style','dashed')">TRACEJADO</button>
+                        <button class="option-btn${styles['border-style'] === 'dotted' ? ' active' : ''}" onclick="toggleOption(this,'border-style','dotted')">PONTILHADO</button>
+                        <button class="option-btn${styles['border-style'] === 'double' ? ' active' : ''}" onclick="toggleOption(this,'border-style','double')">DUPLO</button>
+                    </div></div>`;
+                }
+                if (enabledComponents.includes('border-color')) {
+                    html += `<div><label>Stroke Color</label><div class="color-input-wrapper"><input type="text" id="border-color" value="${styles['border-color'] || '#000000'}" placeholder="#FFFFFF" oninput="updateStyle('border-color',this.value);updateColorPreview(this,'border-color-preview','border-color')"><span class="color-preview" id="border-color-preview" style="background:${styles['border-color'] || '#000000'}"></span></div><div class="color-suggestions">${colors.map(c => `<div class="color-suggestion${c === 'transparent' ? ' transparent' : ''}" style="background:${c}" onclick="setColor('border-color','${c}',true)"></div>`).join('')}</div></div>`;
+                }
+
+                editContent.innerHTML = html;
+                propertiesPanel.style.display = 'block';
+                propertiesPanel.classList.add('open');
+
+                const inputs = editContent.querySelectorAll('input, select, button');
+                inputs.forEach(input => {
+                    input.addEventListener('click', e => e.stopPropagation());
+                    input.addEventListener('input', e => e.stopPropagation());
+                    input.addEventListener('focus', () => input.dataset.focused = 'true');
+                    input.addEventListener('blur', () => input.dataset.focused = 'false');
+                });
+            } catch (e) {
+                showToast('Erro ao abrir propriedades.');
+            }
+        }
+
+        function parseShadow(shadow) {
+            if (!shadow || shadow === 'none') return { x: 0, y: 0, blur: 0, spread: 0, color: '#000000' };
+            const match = shadow.match(/([-]?\d+)px\s+([-]?\d+)px\s+(\d+)px\s+(\d+)px\s+(#[0-9A-Fa-f]{6})/);
+            return match ? {
+                x: parseInt(match[1]),
+                y: parseInt(match[2]),
+                blur: parseInt(match[3]),
+                spread: parseInt(match[4]),
+                color: match[5]
+            } : { x: 0, y: 0, blur: 0, spread: 0, color: '#000000' };
+        }
+
+        function setShadowColor(color) {
+            try {
+                document.getElementById('shadow-color').value = color;
+                updateShadow();
+                updateColorPreview({ value: color }, 'shadow-color-preview', 'shadow-color');
+                if (selectedBlock) showProperties(selectedBlock);
+            } catch (e) {
+                showToast('Erro ao definir cor da sombra.');
+            }
+        }
+
+        function toggleOption(button, prop, val) {
+            try {
+                if (!selectedBlock) return;
+                const buttons = button.parentElement.querySelectorAll('.option-btn');
+                buttons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                updateStyle(prop, val);
+            } catch (e) {
+                showToast('Erro ao alternar opção.');
+            }
+        }
+
+        function moveBlockUp() {
+            try {
+                if (selectedBlock && selectedBlock.previousSibling) {
+                    canvas.insertBefore(selectedBlock, selectedBlock.previousSibling);
+                    showProperties(selectedBlock);
+                    debounceSave();
+                }
+            } catch (e) {
+                showToast('Erro ao mover bloco.');
+            }
+        }
+
+        function moveBlockDown() {
+            try {
+                if (selectedBlock && selectedBlock.nextSibling) {
+                    canvas.insertBefore(selectedBlock.nextSibling, selectedBlock);
+                    showProperties(selectedBlock);
+                    debounceSave();
+                }
+            } catch (e) {
+                showToast('Erro ao mover bloco.');
+            }
+        }
+
+        function moveBlockToPosition(pos) {
+            try {
+                pos = parseInt(pos);
+                if (!selectedBlock || isNaN(pos)) return;
+                const blocks = Array.from(canvas.children);
+                const totalBlocks = blocks.length;
+                pos = Math.max(1, Math.min(pos, totalBlocks));
+                const currentIndex = blocks.indexOf(selectedBlock);
+                if (pos - 1 === currentIndex) return;
+                canvas.insertBefore(selectedBlock, pos - 1 < currentIndex ? blocks[pos - 1] : blocks[pos]);
+                showProperties(selectedBlock);
+                debounceSave();
+            } catch (e) {
+                showToast('Erro ao mover bloco.');
+            }
+        }
+
+        function updateStyle(prop, val) {
+    try {
+        if (!selectedBlock) return;
+        const styles = JSON.parse(selectedBlock.dataset.styles || '{}');
+        styles[prop] = val;
+        selectedBlock.dataset.styles = JSON.stringify(styles);
+        if (prop === 'link') {
+            updateBlockLink(selectedBlock, val);
+        } else if (prop === 'background-image') {
+            selectedBlock.style.backgroundImage = val ? `url("${val}")` : '';
+        } else if (prop === 'translate-x' || prop === 'translate-y') {
+            selectedBlock.style.setProperty(`--${prop}`, val);
+            selectedBlock.style.transform = `translate(${styles['translate-x'] || '0px'}, ${styles['translate-y'] || '0px'})`;
+        } else {
+            selectedBlock.style[prop] = val;
+            if (prop.includes('border')) {
+                selectedBlock.style.border = `${styles['border-width'] || '0px'} ${styles['border-style'] || 'none'} ${styles['border-color'] || '#000000'}`;
+            }
+        }
+        debounceSave();
+    } catch (e) {
+        showToast('Erro ao atualizar estilo.');
+    }
+}
+
+function updateImageUrl(url) {
+    try {
+        if (!selectedBlock) return;
+        const styles = JSON.parse(selectedBlock.dataset.styles || '{}');
+        styles['background-image'] = url;
+        selectedBlock.dataset.styles = JSON.stringify(styles);
+        selectedBlock.style.backgroundImage = url ? `url("${url}")` : '';
+        debounceSave();
+    } catch (e) {
+        showToast('Erro ao atualizar URL da imagem.');
+    }
+}
+
+function updateShadow() {
+    try {
+        if (!selectedBlock) return;
+        const x = document.getElementById('shadow-x').value;
+        const y = document.getElementById('shadow-y').value;
+        const blur = document.getElementById('shadow-blur').value;
+        const spread = document.getElementById('shadow-spread').value;
+        const color = document.getElementById('shadow-color').value || '#000000';
+        const shadowValue = (x === '0' && y === '0' && blur === '0' && spread === '0') ? 'none' : `${x}px ${y}px ${blur}px ${spread}px ${color}`;
+        updateStyle('box-shadow', shadowValue);
+        debounceSave();
+    } catch (e) {
+        showToast('Erro ao atualizar sombra.');
+    }
+}
+
+        function updateWidthHeight(prop, val, unit) {
+            try {
+                if (!selectedBlock) return;
+                const styles = JSON.parse(selectedBlock.dataset.styles || '{}');
+                if (prop === 'width' && unit === '%' && val > 100) val = 100;
+                if (prop === 'width' && unit === 'px' && val < 1) val = 1;
+                if (prop === 'height' && !val) {
+                    styles[prop] = 'auto';
+                    selectedBlock.style[prop] = 'auto';
+                } else {
+                    styles[prop] = `${val}${unit}`;
+                    selectedBlock.style[prop] = `${val}${unit}`;
+                }
+                selectedBlock.dataset.styles = JSON.stringify(styles);
+                debounceSave();
+            } catch (e) {
+                showToast(`Erro ao atualizar ${prop}.`);
+            }
+        }
+
+        function updateAlignment(align) {
+            try {
+                if (!selectedBlock) return;
+                const styles = JSON.parse(selectedBlock.dataset.styles || '{}');
+                if (align === 'left') {
+                    styles['margin-left'] = '0px';
+                    styles['margin-right'] = '0px';
+                } else if (align === 'center') {
+                    styles['margin-left'] = 'auto';
+                    styles['margin-right'] = 'auto';
+                } else if (align === 'right') {
+                    styles['margin-left'] = 'auto';
+                    styles['margin-right'] = '0px';
+                }
+                selectedBlock.dataset.styles = JSON.stringify(styles);
+                selectedBlock.style.marginLeft = styles['margin-left'];
+                selectedBlock.style.marginRight = styles['margin-right'];
+                showProperties(selectedBlock);
+                debounceSave();
+            } catch (e) {
+                showToast('Erro ao atualizar alinhamento.');
+            }
+        }
+
+        function updateColorPreview(input, previewId, inputId) {
+            try {
+                const preview = document.getElementById(previewId);
+                const val = input.value.trim().toLowerCase();
+                preview.classList.toggle('transparent', val === 'transparent');
+                if (val === 'transparent') {
+                    preview.style.background = '';
+                } else if (/^#[0-9A-Fa-f]{6}$/.test(val) || colors.includes(val)) {
+                    preview.style.background = val;
+                } else {
+                    preview.style.background = document.getElementById(inputId).value;
+                }
+            } catch (e) {}
+        }
+
+        function setColor(id, color, keepPanelOpen = false) {
+            try {
+                const input = document.getElementById(id);
+                input.value = color;
+                if (id === 'container-background') {
+                    updateContainerStyle('background', color);
+                } else {
+                    updateStyle(id, color);
+                }
+                updateColorPreview(input, `${id}-preview`, id);
+                if (keepPanelOpen && selectedBlock) {
+                    showProperties(selectedBlock);
+                }
+            } catch (e) {
+                showToast('Erro ao definir cor.');
+            }
+        }
+
+        function updateContent(input) {
+            try {
+                if (!selectedBlock) return;
+                selectedBlock.textContent = input.value || ' ';
+                debounceSave();
+            } catch (e) {
+                showToast('Erro ao atualizar conteúdo.');
+            }
+        }
+
+        function updateBlockLink(block, url) {
+            try {
+                if (url) {
+                    if (block.tagName !== 'A') {
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.innerHTML = block.innerHTML;
+                        link.className = block.className;
+                        link.dataset.styles = block.dataset.styles;
+                        link.draggable = true;
+                        link.tabIndex = 0;
+                        block.replaceWith(link);
+                        selectedBlock = link;
+                        initDrag(link);
+                        link.onclick = e => { e.stopPropagation(); showProperties(link); };
+                        link.onkeydown = e => { if (e.key === 'Enter') { e.stopPropagation(); showProperties(link); } };
+                    } else {
+                        block.href = url;
+                    }
+                } else if (block.tagName === 'A') {
+                    const div = document.createElement('div');
+                    div.className = block.className;
+                    div.dataset.styles = block.dataset.styles;
+                    div.innerHTML = block.innerHTML;
+                    div.draggable = true;
+                    div.tabIndex = 0;
+                    block.replaceWith(div);
+                    selectedBlock = div;
+                    initDrag(div);
+                    div.onclick = e => { e.stopPropagation(); showProperties(div); };
+                    div.onkeydown = e => { if (e.key === 'Enter') { e.stopPropagation(); showProperties(div); } };
+                }
+            } catch (e) {
+                showToast('Erro ao atualizar link.');
+            }
+        }
+
+        function deleteBlock() {
+            try {
+                if (selectedBlock) {
+                    selectedBlock.remove();
+                    selectedBlock = null;
+                    propertiesPanel.style.display = 'none';
+                    propertiesPanel.classList.remove('open');
+                    debounceSave();
+                }
+            } catch (e) {
+                showToast('Erro ao deletar bloco.');
+            }
+        }
+
+        function duplicateBlock() {
+            try {
+                if (selectedBlock) {
+                    propertiesPanel.style.display = 'none';
+                    propertiesPanel.classList.remove('open');
+                    const clone = selectedBlock.cloneNode(true);
+                    clone.classList.remove('selected');
+                    canvas.insertBefore(clone, selectedBlock.nextSibling);
+                    initDrag(clone);
+                    clone.onclick = e => { e.stopPropagation(); showProperties(clone); };
+                    clone.onkeydown = e => { if (e.key === 'Enter') { e.stopPropagation(); showProperties(clone); } };
+                    debounceSave();
+                }
+            } catch (e) {
+                showToast('Erro ao duplicar bloco.');
+            }
+        }
+
+function initDrag(block) {
+    try {
+        let placeholder = null;
+        let initialY = 0;
+        let scrollInterval = null;
+
+        block.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', 'dragging');
+            block.classList.add('dragging');
+            block.style.opacity = '0.4';
+            initialY = e.clientY;
+            // Adiciona um pequeno atraso para garantir que o placeholder seja criado corretamente
+            setTimeout(() => {
+                placeholder = document.createElement('div');
+                placeholder.className = 'drag-placeholder';
+                placeholder.style.height = `${block.offsetHeight}px`;
+                canvas.insertBefore(placeholder, block.nextSibling);
+            }, 0);
+            // Inicia o scroll automático
+            startAutoScroll(e);
+        });
+
+        block.addEventListener('dragend', e => {
+            block.classList.remove('dragging');
+            block.style.opacity = '1';
+            if (placeholder) {
+                placeholder.remove();
+                placeholder = null;
+            }
+            clearInterval(scrollInterval);
+            debounceSave();
+        });
+
+        block.addEventListener('dragover', e => {
+            e.preventDefault();
+        });
+
+        block.addEventListener('dragenter', e => {
+            e.preventDefault();
+            const dragging = document.querySelector('.dragging');
+            if (dragging && dragging !== block && placeholder) {
+                const rect = block.getBoundingClientRect();
+                const after = e.clientY > rect.top + rect.height / 2;
+                // Move o placeholder para a posição correta
+                requestAnimationFrame(() => {
+                    canvas.insertBefore(placeholder, after ? block.nextSibling : block);
+                });
+            }
+        });
+
+        block.addEventListener('drop', e => {
+            e.preventDefault();
+            const dragging = document.querySelector('.dragging');
+            if (dragging && placeholder) {
+                requestAnimationFrame(() => {
+                    canvas.insertBefore(dragging, placeholder);
+                    placeholder.remove();
+                    placeholder = null;
+                    dragging.classList.remove('dragging');
+                    dragging.style.opacity = '1';
+                    debounceSave();
+                });
+            }
+        });
+
+        canvas.addEventListener('dragover', e => {
+            e.preventDefault();
+            // Atualiza a posição do placeholder durante o arraste
+            updatePlaceholderPosition(e);
+        });
+
+        canvas.addEventListener('drop', e => {
+            e.preventDefault();
+            const dragging = document.querySelector('.dragging');
+            if (dragging && placeholder) {
+                requestAnimationFrame(() => {
+                    canvas.insertBefore(dragging, placeholder);
+                    placeholder.remove();
+                    placeholder = null;
+                    dragging.classList.remove('dragging');
+                    dragging.style.opacity = '1';
+                    debounceSave();
+                });
+            }
+            clearInterval(scrollInterval);
+        });
+
+        // Função para atualizar a posição do placeholder com base no movimento do mouse
+        function updatePlaceholderPosition(e) {
+            if (!placeholder) return;
+            const blocks = Array.from(canvas.children).filter(child => child !== placeholder && child !== block);
+            let closestBlock = null;
+            let minDistance = Infinity;
+            let insertAfter = false;
+
+            blocks.forEach(sibling => {
+                const rect = sibling.getBoundingClientRect();
+                const centerY = rect.top + rect.height / 2;
+                const distance = Math.abs(e.clientY - centerY);
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestBlock = sibling;
+                    insertAfter = e.clientY > centerY;
+                }
+            });
+
+            if (closestBlock) {
+                requestAnimationFrame(() => {
+                    canvas.insertBefore(placeholder, insertAfter ? closestBlock.nextSibling : closestBlock);
+                });
+            } else if (blocks.length === 0) {
+                canvas.appendChild(placeholder);
+            }
+        }
+
+        // Função para scroll automático
+        function startAutoScroll(e) {
+            clearInterval(scrollInterval);
+            scrollInterval = setInterval(() => {
+                const canvasRect = canvas.getBoundingClientRect();
+                const scrollThreshold = 50; // Distância da borda para iniciar o scroll
+                const scrollSpeed = 10; // Velocidade do scroll
+
+                if (e.clientY < canvasRect.top + scrollThreshold) {
+                    canvas.scrollTop -= scrollSpeed;
+                } else if (e.clientY > canvasRect.bottom - scrollThreshold) {
+                    canvas.scrollTop += scrollSpeed;
+                }
+            }, 16); // Aproximadamente 60fps
+        }
+    } catch (e) {
+        console.error('Erro na funcionalidade de arrastar:', e);
+        showToast('Erro na funcionalidade de arrastar.');
+    }
+}
+
+
+        function showSettings() {
+            try {
+                settingsPanel.style.display = 'block';
+                settingsPanel.classList.add('open');
+                document.getElementById('bgSuggestions').innerHTML = colors.map(c => `<div class="color-suggestion${c === 'transparent' ? ' transparent' : ''}" style="background:${c}" onclick="setColor('container-background','${c}')"></div>`).join('');
+            } catch (e) {
+                showToast('Erro ao abrir ajustes.');
+            }
+        }
+
+        function updateContainerStyle(prop, val) {
+            try {
+                if (prop.includes('padding') && (!val || parseInt(val) < 0)) val = '0px';
+                containerStyles[prop] = val;
+                canvas.style[prop] = val;
+                debounceSave();
+            } catch (e) {
+                showToast('Erro ao atualizar estilo do container.');
+            }
+        }
+
+function getBlockCSS(block) {
+    const styles = JSON.parse(block.dataset.styles || '{}');
+    const type = block.classList[1];
+    const config = getBlockConfig(type);
+    let css = '';
+
+    Object.entries(styles).forEach(([key, value]) => {
+        if (key === 'link') return;
+        if (key === 'translate-x' || key === 'translate-y') {
+        } else if (key === 'background-image' && value) {
+            css += `background-image: url(${value});`;
+        } else if (key === 'border') {
+        } else {
+            if (key === 'font-family') {
+                css += `${key}: '${value}', sans-serif;`;
+            } else {
+                css += `${key}: ${value};`;
+            }
+        }
+    });
+
+    if (styles['translate-x'] || styles['translate-y']) {
+        css += `transform: translate(${styles['translate-x'] || '0px'}, ${styles['translate-y'] || '0px'});`;
+    }
+
+    if (styles['border-width'] || styles['border-style'] || styles['border-color']) {
+        css += `border: ${styles['border-width'] || '0px'} ${styles['border-style'] || 'none'} ${styles['border-color'] || '#000000'};`;
+    }
+
+    if (config.defaultStyles) {
+        Object.entries(config.defaultStyles).forEach(([key, value]) => {
+            if (!styles[key] && key !== 'link' && key !== 'font-family') {
+                css += `${key}: ${value};`;
+            }
+        });
+    }
+
+    return css;
+}
+
+function generateSite() {
+    try {
+        const blocks = Array.from(canvas.children);
+        const containerCSS = Object.entries(containerStyles)
+            .map(([key, value]) => `${key}: ${value};`)
+            .join('');
+
+        let blocksHTML = '';
+        blocks.forEach(block => {
+            const type = block.classList[1];
+            const styles = JSON.parse(block.dataset.styles || '{}');
+            const isLink = block.tagName === 'A';
+            const tag = isLink ? 'a' : 'div';
+            const href = isLink && styles.link ? ` href="${styles.link}"` : '';
+            const css = getBlockCSS(block);
+            const content = block.innerHTML || '';
+            blocksHTML += `<${tag} class="block ${type}" style="${css}"${href}>${content}</${tag}>\n`;
+        });
+
+        const usedFonts = new Set(['Roboto']);
+        const usedWeights = new Map();
+        blocks.forEach(block => {
+            const styles = JSON.parse(block.dataset.styles || '{}');
+            const font = styles['font-family'] || 'Roboto';
+            const weight = styles['font-weight'] || '400';
+            usedFonts.add(font);
+            if (!usedWeights.has(font)) {
+                usedWeights.set(font, new Set());
+            }
+            usedWeights.get(font).add(weight);
+        });
+
+        const fontImports = Array.from(usedFonts)
+            .map(font => {
+                const weights = Array.from(usedWeights.get(font) || ['400']).join(';');
+                return `${font.replace(/\s+/g, '+')}:wght@${weights}`;
+            })
+            .join('&family=');
+        const fontLink = `<link href="https://fonts.googleapis.com/css2?family=${fontImports}&display=swap" rel="stylesheet">`;
+
+        blocks.forEach(block => {
+            const styles = JSON.parse(block.dataset.styles || '{}');
+            if (styles['background-image']) {
+                let url = styles['background-image'].replace(/^url\(["']?/, '').replace(/["']?\)$/, '');
+                if (!url || url === 'https://****.com/imagem.png') {
+                    styles['background-image'] = '';
+                } else {
+                    try {
+                        new URL(url);
+                        styles['background-image'] = url;
+                    } catch {
+                        styles['background-image'] = '';
+                    }
+                }
+                block.dataset.styles = JSON.stringify(styles);
+            }
+        });
+
+        const globalCSS = `
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { background: #f0f2f5; font-size: 16px; }
+            .canvas { width: 100%; border: 1px solid #dfe6e9; box-shadow: 0 2px 8px rgba(0,0,0,.04); min-height: 100vh; display: flex; flex-direction: column; ${containerCSS} }
+            .block { padding: 15px; margin: 10px 0; border-radius: 8px; box-sizing: border-box; transition: box-shadow 0.2s ease, border 0.2s ease, background 0.2s ease; }
+            .block:hover { box-shadow: 0 4px 12px rgba(0,0,0,.08); border-color: #e9ecef; }
+            .block.title { font-size: 20px; font-weight: 700; text-align: center; color: #1a202c; }
+            .block.subtitle { font-size: 18px; text-align: center; color: #4a5568; font-weight: 500; }
+            .block.text { font-size: 16px; color: #2d3748; line-height: 1.6; }
+            .block.button-solid { display: block; padding: 12px 24px; background: #FFFFFF; color: #330066; border: 2px solid #330066; border-radius: 8px; font-size: 14px; font-weight: 800; text-align: center; text-transform: uppercase; text-decoration: none; margin-left: auto; margin-right: auto; box-shadow: 3px 3px 0px 0px #E6CCFF; opacity: 1; width: 300px; height: auto; }
+            .block.button-solid:hover { background: #E6CCFF; color: #330066; }
+            .block.button-rounded { display: block; padding: 12px 24px; background: #FFFFFF; color: #330066; border: 2px solid #330066; border-radius: 50px; font-size: 14px; font-weight: 800; text-align: center; text-transform: uppercase; text-decoration: none; margin-left: auto; margin-right: auto; box-shadow: 3px 3px 0px 0px #E6CCFF; opacity: 1; width: 300px; height: auto; }
+            .block.button-rounded:hover { background: #E6CCFF; color: #330066; }
+            .block.image-grid { display: block; background-size: cover; background-position: center; background-repeat: no-repeat; width: 180px; height: 180px; }
+            .block.link { display: inline-block; padding: 5px; background: transparent; color: #007BFF; font-size: 16px; font-weight: 400; text-align: left; text-decoration: underline; width: auto; height: auto; }
+            .block.link:hover { color: #005FCC; background: transparent; }
+            .block.image { display: block; background-size: cover; background-position: center; background-repeat: no-repeat; width: 100%; height: 200px; }
+            .block.image-circular { display: block; background-size: cover; background-position: center; background-repeat: no-repeat; width: 150px; height: 150px; border-radius: 50%; margin-left: auto; margin-right: auto; }
+            .block.divider { display: block; height: 1px; background: #000000; width: 100%; }
+            .block.spacing { display: block; height: 20px; }
+        `;
+
+        const generatedHTML = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generated Site</title>
+    ${fontLink}
+    <style>
+        ${globalCSS}
+    </style>
+</head>
+<body>
+    <div class="canvas">
+        ${blocksHTML}
+    </div>
+</body>
+</html>
+        `;
+
+        navigator.clipboard.writeText(generatedHTML).then(() => {
+            showToast('Código copiado!');
+        }).catch(err => {
+            showToast('Erro ao copiar código.');
+            console.error('Erro ao copiar:', err);
+        });
+
+    } catch (e) {
+        showToast('Erro ao gerar site.');
+        console.error('Erro ao gerar site:', e);
+    }
+}
+
+function updateStyle(prop, val) {
+    try {
+        if (!selectedBlock) return;
+        const styles = JSON.parse(selectedBlock.dataset.styles || '{}');
+        styles[prop] = val;
+        selectedBlock.dataset.styles = JSON.stringify(styles);
+        if (prop === 'link') {
+            updateBlockLink(selectedBlock, val);
+        } else if (prop === 'background-image') {
+            selectedBlock.style.backgroundImage = val ? `url("${val}")` : '';
+        } else if (prop === 'translate-x' || prop === 'translate-y') {
+            selectedBlock.style.setProperty(`--${prop}`, val);
+            selectedBlock.style.transform = `translate(${styles['translate-x'] || '0px'}, ${styles['translate-y'] || '0px'})`;
+        } else {
+            selectedBlock.style[prop] = val;
+            if (prop.includes('border')) {
+                selectedBlock.style.border = `${styles['border-width'] || '0px'} ${styles['border-style'] || 'none'} ${styles['border-color'] || '#000000'}`;
+            }
+        }
+        debounceSave();
+    } catch (e) {
+        showToast('Erro ao atualizar estilo.');
+    }
+}
+
+        function debounce(func, wait) {
+            let timeout;
+            return function (...args) {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, args), wait);
+            };
+        }
+
+        const debounceSave = debounce(saveState, 100);
+
+        function saveState() {
+            try {
+                const state = { 
+                    containerStyles: { ...containerStyles },
+                    blocks: Array.from(canvas.children).map(b => ({ 
+                        className: b.className, 
+                        styles: b.dataset.styles || '{}', 
+                        html: b.innerHTML || '',
+                        href: b.tagName === 'A' ? b.href : undefined
+                    }))
+                };
+                historyManager.saveState(state);
+                localStorage.setItem('minixState', JSON.stringify(state));
+            } catch (e) {
+                console.error('Erro ao salvar estado:', e);
+                showToast('Erro ao salvar estado.');
+            }
+        }
+
+        function loadState() {
+            try {
+                const state = localStorage.getItem('minixState');
+                if (!state) {
+                    saveState();
+                    return;
+                }
+                const { containerStyles: cs, blocks } = JSON.parse(state);
+                Object.assign(containerStyles, cs);
+                Object.assign(canvas.style, cs);
+                blocks.forEach(b => {
+                    const block = b.href ? document.createElement('a') : document.createElement('div');
+                    block.className = b.className;
+                    block.dataset.styles = b.styles;
+                    block.innerHTML = b.html || '';
+                    if (b.href) block.href = b.href;
+                    block.draggable = true;
+                    block.tabIndex = 0;
+                    canvas.appendChild(block);
+                    const styles = JSON.parse(b.styles || '{}');
+                    Object.entries(styles).forEach(([key, value]) => {
+                        if (key === 'translate-x' || key === 'translate-y') {
+                            block.style.setProperty(`--${key}`, value);
+                        } else if (key === 'border') {
+                            block.style.border = `${styles['border-width'] || '0px'} ${styles['border-style'] || 'none'} ${styles['border-color'] || '#000000'}`;
+                        } else {
+                            block.style[key] = value;
+                        }
+                    });
+                    if (styles['translate-x'] || styles['translate-y']) {
+                        block.style.transform = `translate(${styles['translate-x'] || '0px'}, ${styles['translate-y'] || '0px'})`;
+                    }
+                    initDrag(block);
+                    block.onclick = e => { e.stopPropagation(); e.preventDefault(); showProperties(block); };
+                    block.onkeydown = e => { if (e.key === 'Enter') { e.stopPropagation(); e.preventDefault(); showProperties(block); } };
+                });
+                saveState();
+            } catch (e) {
+                console.error('Erro ao carregar estado:', e);
+                showToast('Erro ao carregar estado.');
+            }
+        }
+
+        document.addEventListener('keydown', e => {
+            try {
+                if (e.key === 'Escape') {
+                    closeBlockDialog();
+                    closeFontDialog();
+                    if (selectedBlock && !document.activeElement.closest('.edit-panel')) {
+                        selectedBlock.classList.remove('selected');
+                        selectedBlock = null;
+                        propertiesPanel.style.display = 'none';
+                        propertiesPanel.classList.remove('open');
+                    }
+                    settingsPanel.style.display = 'none';
+                    settingsPanel.classList.remove('open');
+                } else if (e.ctrlKey && e.key === 'z') {
+                    e.preventDefault();
+                    historyManager.undo();
+                } else if (e.ctrlKey && e.key === 'y') {
+                    e.preventDefault();
+                    historyManager.redo();
+                }
+            } catch (e) {}
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            try {
+                loadState();
+            } catch (e) {
+                showToast('Erro ao carregar página.');
+            }
+        });
+    </script>
+  </body>
+</html>
